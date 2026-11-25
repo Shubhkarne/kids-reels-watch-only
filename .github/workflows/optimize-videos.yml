@@ -1,0 +1,48 @@
+name: Optimize Kids Reels
+
+on:
+  push:
+    paths:
+      - 'raw-videos/*.mp4'
+      - 'raw-videos/*.mov'
+
+jobs:
+  transcode-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg and AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg awscli
+
+      - name: Compress vertical video & extract thumbnail
+        run: |
+          mkdir -p out
+          for f in raw-videos/*.mp4 raw-videos/*.mov; do
+            [ -e "$f" ] || continue
+            base=$(basename "$f")
+            name="${base%.*}"
+
+            # Vertical 720x1280, web-friendly H.264 + faststart, clean audio
+            ffmpeg -y -i "$f" \
+              -vf "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2:black" \
+              -c:v libx264 -preset fast -crf 24 -pix_fmt yuv420p \
+              -movflags +faststart \
+              -c:a aac -b:a 128k \
+              "out/${name}.mp4"
+
+            # Thumbnail frame at 1 second
+            ffmpeg -y -ss 00:00:01 -i "out/${name}.mp4" -frames:v 1 -q:v 3 "out/${name}.jpg"
+          done
+
+      - name: Upload processed clips to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+        run: |
+          aws s3 sync out/ "s3://${{ secrets.R2_BUCKET_NAME }}/reels/" \
+            --endpoint-url "${{ secrets.R2_ENDPOINT_URL }}"
