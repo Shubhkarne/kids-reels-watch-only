@@ -8,35 +8,38 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background: #101828; color: #fff; min-height: 100vh; display: flex; justify-content: center; }
     .app { width: 100%; max-width: 440px; min-height: 100vh; display: flex; flex-direction: column; padding: 16px; gap: 14px; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .badge { background: #1d2939; padding: 8px 12px; border-radius: 999px; font-size: 13px; }
     .btn { border: none; border-radius: 18px; padding: 14px 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
     .btn-primary { background: #22c55e; color: #052e16; }
     .btn-secondary { background: #334155; color: #fff; }
     .btn-calm { background: #38bdf8; color: #082f49; }
     .age-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .age-card { background: #1e293b; border: 2px solid #334155; border-radius: 20px; padding: 18px 14px; text-align: center; cursor: pointer; }
+    .age-card { background: #1e293b; border: 2px solid #334155; border-radius: 20px; padding: 16px 14px; text-align: center; cursor: pointer; }
     .age-card.active { border-color: #22c55e; background: #14532d; }
-    .age-emoji { font-size: 32px; display: block; margin-bottom: 6px; }
+    .age-emoji { font-size: 30px; display: block; margin-bottom: 6px; }
     .topic-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
     .topic-chip { flex: 0 0 auto; background: #1e293b; color: #e2e8f0; border: 1px solid #475569; border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
     .topic-chip.active { background: #facc15; color: #1e293b; border-color: #facc15; font-weight: 700; }
-    .stage { position: relative; flex: 1; min-height: 420px; background: #000; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .stage { position: relative; flex: 1; min-height: 400px; background: #000; border-radius: 24px; overflow: hidden; display: flex; align-items: center; justify-content: center; touch-action: pan-x; }
     video { width: 100%; height: 100%; object-fit: cover; }
-    .overlay-title { position: absolute; left: 14px; right: 14px; bottom: 14px; background: rgba(15, 23, 42, 0.78); padding: 12px 14px; border-radius: 16px; font-size: 16px; font-weight: 700; }
+    .status-banner { position: absolute; top: 14px; left: 14px; right: 14px; background: rgba(15, 23, 42, 0.85); color: #fde68a; padding: 10px 12px; border-radius: 14px; font-size: 13px; text-align: center; }
+    .overlay-title { position: absolute; left: 14px; right: 14px; bottom: 14px; background: rgba(15, 23, 42, 0.82); padding: 12px 14px; border-radius: 16px; font-size: 16px; font-weight: 700; }
     .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
     .modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.92); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
     .modal.open { display: flex; }
     .modal-box { width: 100%; max-width: 380px; background: #1e293b; border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
-    input, select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; }
+    input, select { width: 100%; padding: 11px; border-radius: 12px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; margin-top: 6px; }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="app">
     <div class="top-bar">
-      <div class="badge" id="sessionBadge">Reel 0 / 6</div>
-      <button class="btn btn-secondary" style="padding: 8px 14px; font-size: 14px;" onclick="openParentGate()">🔒 Parents</button>
+      <div class="badge" id="sessionBadge">Reel 1 / 6</div>
+      <div class="badge" id="quietBadge">🌙 Quiet: Off</div>
+      <button class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;" onclick="openParentGate()">🔒 Parents</button>
     </div>
 
     <div class="age-grid">
@@ -55,15 +58,16 @@
     <div class="topic-row" id="topicRow"></div>
 
     <div class="stage" id="playerStage">
-      <video id="reelVideo" playsinline controls preload="auto"></video>
+      <video id="reelVideo" playsinline controls preload="metadata"></video>
+      <div class="status-banner hidden" id="statusBanner"></div>
       <div class="overlay-title" id="reelTitle">Loading reels...</div>
     </div>
 
     <div class="stage hidden" id="breakStage" style="flex-direction: column; gap: 14px; padding: 24px; text-align: center; background: #1e293b;">
-      <div style="font-size: 48px;">🌟</div>
-      <h2>All Done for Now!</h2>
-      <p style="opacity: 0.9;">Great watching! Time to stretch, draw, or ask a grown-up for another round.</p>
-      <button class="btn btn-primary" onclick="openParentGate()">Parent Unlock for More</button>
+      <div style="font-size: 48px;" id="breakEmoji">🌟</div>
+      <h2 id="breakHeading">All Done for Now!</h2>
+      <p id="breakMessage" style="opacity: 0.9;">Great watching! Time to stretch, draw, or ask a grown-up for another round.</p>
+      <button class="btn btn-primary" onclick="openParentGate()">Parent Unlock</button>
     </div>
 
     <div class="controls">
@@ -88,13 +92,28 @@
     <div class="modal-box hidden" id="settingsStep">
       <h3>Parent Controls</h3>
       <label style="font-size: 14px;">Max reels per session:
-        <select id="sessionLimitSelect" style="margin-top: 6px;">
+        <select id="sessionLimitSelect">
           <option value="4">4 reels (Short)</option>
           <option value="6" selected>6 reels (Default)</option>
           <option value="8">8 reels</option>
           <option value="12">12 reels</option>
         </select>
       </label>
+
+      <label style="font-size: 14px;">Quiet hours (24h, optional):
+        <div class="row-2">
+          <div>
+            <span style="font-size: 12px; opacity: 0.8;">Start</span>
+            <input type="time" id="quietStartInput" />
+          </div>
+          <div>
+            <span style="font-size: 12px; opacity: 0.8;">End</span>
+            <input type="time" id="quietEndInput" />
+          </div>
+        </div>
+      </label>
+
+      <button class="btn btn-secondary" style="padding: 10px; font-size: 14px;" onclick="clearQuietHours()">Clear Quiet Hours</button>
       <button class="btn btn-calm" onclick="startFreshSession()">Start New Session</button>
       <button class="btn btn-primary" onclick="saveParentSettings()">Save & Close</button>
     </div>
@@ -105,8 +124,8 @@
       reels: [
         {
           id: "sample-1",
-          title: "Big Blue Whale (Sample Clip)",
-          video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+          title: "Flower & Nature Clip (Sample)",
+          video_url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
           age_min: 2,
           age_max: 8,
           topic: "animals",
@@ -114,9 +133,9 @@
         },
         {
           id: "sample-2",
-          title: "Tiny Space Adventure (Sample Clip)",
-          video_url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
-          age_min: 5,
+          title: "Animated Story Clip (Sample)",
+          video_url: "https://www.w3schools.com/html/mov_bbb.mp4",
+          age_min: 2,
           age_max: 8,
           topic: "science",
           is_active: true
@@ -127,22 +146,112 @@
     let allReels = [];
     let filteredReels = [];
     let currentIndex = 0;
-    let watchedInSession = 0;
+    let watchedCount = 0;
     let sessionLimit = 6;
+    let quietStart = "";
+    let quietEnd = "";
     let ageTier = "2-5";
     let selectedTopic = "all";
     let expectedAnswer = 0;
+    let touchStartY = 0;
 
     const videoEl = document.getElementById("reelVideo");
     const titleEl = document.getElementById("reelTitle");
+    const statusEl = document.getElementById("statusBanner");
     const badgeEl = document.getElementById("sessionBadge");
+    const quietBadgeEl = document.getElementById("quietBadge");
+    const stageEl = document.getElementById("playerStage");
+
+    videoEl.addEventListener("error", () => {
+      showStatus("⚠️ Could not load this clip. Tap Next ➡️ or check video URL.");
+    });
+
+    videoEl.addEventListener("loadeddata", () => {
+      hideStatus();
+    });
+
+    stageEl.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    stageEl.addEventListener("touchend", (e) => {
+      if (!touchStartY || !e.changedTouches.length) return;
+      const deltaY = touchStartY - e.changedTouches[0].clientY;
+      touchStartY = 0;
+      if (Math.abs(deltaY) > 65) {
+        if (deltaY > 0) nextReel();
+        else prevReel();
+      }
+    }, { passive: true });
+
+    function showStatus(msg) {
+      statusEl.textContent = msg;
+      statusEl.classList.remove("hidden");
+    }
+
+    function hideStatus() {
+      statusEl.classList.add("hidden");
+    }
+
+    function isInQuietHours() {
+      if (!quietStart || !quietEnd) return false;
+      const now = new Date();
+      const cur = now.getHours() * 60 + now.getMinutes();
+      const [sH, sM] = quietStart.split(":").map(Number);
+      const [eH, eM] = quietEnd.split(":").map(Number);
+      if ([sH, sM, eH, eM].some(Number.isNaN)) return false;
+      const startMin = sH * 60 + sM;
+      const endMin = eH * 60 + eM;
+      if (startMin === endMin) return false;
+      if (startMin < endMin) return cur >= startMin && cur < endMin;
+      return cur >= startMin || cur < endMin;
+    }
+
+    function updateQuietBadge() {
+      if (quietStart && quietEnd) {
+        quietBadgeEl.textContent = `🌙 ${quietStart}–${quietEnd}`;
+      } else {
+        quietBadgeEl.textContent = "🌙 Quiet: Off";
+      }
+    }
+
+    function checkSessionOrQuietState() {
+      updateQuietBadge();
+      if (isInQuietHours()) {
+        videoEl.pause();
+        stageEl.classList.add("hidden");
+        document.getElementById("breakStage").classList.remove("hidden");
+        document.getElementById("breakEmoji").textContent = "🌙";
+        document.getElementById("breakHeading").textContent = "Quiet Time";
+        document.getElementById("breakMessage").textContent = `Screen time is resting during quiet hours (${quietStart} – ${quietEnd}).`;
+        return true;
+      }
+
+      if (watchedCount >= sessionLimit) {
+        videoEl.pause();
+        stageEl.classList.add("hidden");
+        document.getElementById("breakStage").classList.remove("hidden");
+        document.getElementById("breakEmoji").textContent = "🌟";
+        document.getElementById("breakHeading").textContent = "All Done for Now!";
+        document.getElementById("breakMessage").textContent = "Great watching! Time to stretch, draw, or ask a grown-up for another round.";
+        return true;
+      }
+
+      document.getElementById("breakStage").classList.add("hidden");
+      stageEl.classList.remove("hidden");
+      return false;
+    }
 
     async function loadCatalog() {
       try {
         const res = await fetch("./catalog/reels.json?t=" + Date.now());
         if (!res.ok) throw new Error("No catalog");
         const data = await res.json();
-        const valid = (data.reels || []).filter(r => r.is_active !== false && r.video_url && !r.video_url.includes("your-r2-domain.example"));
+        const valid = (data.reels || []).filter(
+          r => r.is_active !== false && r.video_url && !r.video_url.includes("your-r2-domain.example")
+        );
         allReels = valid.length ? valid : FALLBACK_DATA.reels;
       } catch {
         allReels = FALLBACK_DATA.reels;
@@ -185,42 +294,43 @@
       });
       if (!filteredReels.length) filteredReels = allReels;
       currentIndex = 0;
-      loadCurrentReel(false);
+      renderReel();
     }
 
-    function loadCurrentReel(countAsWatched = true) {
-      if (countAsWatched) watchedInSession += 1;
+    function updateBadge() {
+      const displayNum = Math.min(watchedCount + 1, sessionLimit);
+      badgeEl.textContent = `Reel ${displayNum} / ${sessionLimit}`;
+    }
+
+    function renderReel() {
       updateBadge();
-
-      if (watchedInSession >= sessionLimit) {
-        document.getElementById("playerStage").classList.add("hidden");
-        document.getElementById("breakStage").classList.remove("hidden");
-        videoEl.pause();
-        return;
-      }
-
-      document.getElementById("breakStage").classList.add("hidden");
-      document.getElementById("playerStage").classList.remove("hidden");
-
+      if (checkSessionOrQuietState()) return;
+      hideStatus();
       const reel = filteredReels[currentIndex % filteredReels.length];
       titleEl.textContent = reel.title || "Kids Reel";
       videoEl.src = reel.video_url;
       videoEl.load();
     }
 
-    function updateBadge() {
-      const shown = Math.min(watchedInSession + 1, sessionLimit);
-      badgeEl.textContent = `Reel ${shown} / ${sessionLimit}`;
-    }
-
     function nextReel() {
+      if (isInQuietHours()) {
+        checkSessionOrQuietState();
+        return;
+      }
+      watchedCount += 1;
+      updateBadge();
+      if (checkSessionOrQuietState()) return;
       currentIndex = (currentIndex + 1) % filteredReels.length;
-      loadCurrentReel(true);
+      renderReel();
     }
 
     function prevReel() {
+      if (isInQuietHours()) {
+        checkSessionOrQuietState();
+        return;
+      }
       currentIndex = (currentIndex - 1 + filteredReels.length) % filteredReels.length;
-      loadCurrentReel(false);
+      renderReel();
     }
 
     function replayReel() {
@@ -234,6 +344,9 @@
       expectedAnswer = a + b;
       document.getElementById("mathPrompt").textContent = `What is ${a} + ${b}?`;
       document.getElementById("mathAnswer").value = "";
+      document.getElementById("sessionLimitSelect").value = String(sessionLimit);
+      document.getElementById("quietStartInput").value = quietStart;
+      document.getElementById("quietEndInput").value = quietEnd;
       document.getElementById("gateStep").classList.remove("hidden");
       document.getElementById("settingsStep").classList.add("hidden");
       document.getElementById("parentModal").classList.add("open");
@@ -253,17 +366,33 @@
       }
     }
 
-    function startFreshSession() {
-      watchedInSession = 0;
+    function clearQuietHours() {
+      quietStart = "";
+      quietEnd = "";
+      document.getElementById("quietStartInput").value = "";
+      document.getElementById("quietEndInput").value = "";
+    }
+
+    function applySettingsFromInputs() {
       sessionLimit = Number(document.getElementById("sessionLimitSelect").value);
+      quietStart = document.getElementById("quietStartInput").value;
+      quietEnd = document.getElementById("quietEndInput").value;
+    }
+
+    function startFreshSession() {
+      applySettingsFromInputs();
+      watchedCount = 0;
       closeParentModal();
-      loadCurrentReel(false);
+      renderReel();
     }
 
     function saveParentSettings() {
-      sessionLimit = Number(document.getElementById("sessionLimitSelect").value);
+      applySettingsFromInputs();
       closeParentModal();
       updateBadge();
+      if (!checkSessionOrQuietState()) {
+        renderReel();
+      }
     }
 
     loadCatalog();
